@@ -40,11 +40,6 @@
 			path = WikipediaExplorerTests;
 			sourceTree = "<group>";
 		};
-		88D5E78B2E593505002D93E2 /* WikipediaExplorerUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = WikipediaExplorerUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				88D5E7732E593504002D93E2 /* WikipediaExplorer */,
-				88D5E7812E593505002D93E2 /* WikipediaExplorerTests */,
-				88D5E78B2E593505002D93E2 /* WikipediaExplorerUITests */,
+				88D5E79B2E593522002D93E2 /* Tests */,
 				88D5E7722E593504002D93E2 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +84,14 @@
 				88D5E7882E593505002D93E2 /* WikipediaExplorerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		88D5E79B2E593522002D93E2 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				88D5E7812E593505002D93E2 /* WikipediaExplorerTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -152,9 +154,6 @@
 			);
 			dependencies = (
 				88D5E78A2E593505002D93E2 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				88D5E78B2E593505002D93E2 /* WikipediaExplorerUITests */,
 			);
 			name = WikipediaExplorerUITests;
 			packageProductDependencies = (
@@ -405,6 +404,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -436,6 +436,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
