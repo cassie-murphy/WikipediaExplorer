@@ -2,13 +2,14 @@ import SwiftUI
 
 @Observable
 final class SearchViewModel {
-    enum Mode: Equatable { case idle, searching, results, error(String) }
+    enum Mode: Equatable { case idle, searching, results, error(WikipediaError) }
 
     private let wikipediaAPIClient: WikipediaAPIClient
     private var searchTask: Task<Void, Never>?
     private let history: SearchHistoryStore
+    private let debounceInterval: UInt64 = 350_000_000 // 350ms
+    
     var recentSearches: [String] = []
-
     var query: String = ""
     var mode: Mode = .idle
     var results: [Article] = []
@@ -20,35 +21,56 @@ final class SearchViewModel {
     }
 
     func onQueryChanged() {
+        // Cancel any existing search
         searchTask?.cancel()
-        let trimmedSearchQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedSearchQuery.isEmpty {
-            Task { await MainActor.run { self.mode = .idle; self.results = [] } }
+        
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Handle empty query
+        guard !trimmedQuery.isEmpty else {
+            Task { @MainActor in
+                self.mode = .idle
+                self.results = []
+            }
             return
         }
 
+        // Start new search with debouncing
         mode = .searching
         searchTask = Task {
-            try? await Task.sleep(nanoseconds: 350_000_000) // debounce
-            guard !Task.isCancelled else { return }
             do {
-                let items = try await wikipediaAPIClient.search(text: trimmedSearchQuery, limit: 20)     // actor hop to api
+                // Debounce the search
+                try await Task.sleep(nanoseconds: debounceInterval)
                 guard !Task.isCancelled else { return }
+                
+                // Perform the search
+                let articles = try await wikipediaAPIClient.search(text: trimmedQuery, limit: 20)
+                guard !Task.isCancelled else { return }
+
+                // Update UI on main actor
                 await MainActor.run {
-                    self.results = items
+                    self.results = articles
                     self.mode = .results
-                    self.history.record(trimmedSearchQuery)
+                    self.history.record(trimmedQuery)
                     self.recentSearches = self.history.load()
                 }
             } catch {
                 guard !Task.isCancelled else { return }
-                await MainActor.run { self.mode = .error("Search failed. Please try again.") }
+
+                await MainActor.run {
+                    let wikipediaError = WikipediaError.from(error)
+                    self.mode = .error(wikipediaError)
+                    self.results = []
+                }
             }
         }
     }
+    
+    func retrySearch() {
+        onQueryChanged()
+    }
 
-    // MARK: - Recent search intents
-
+    // MARK: - Recent Search Management
     func selectRecent(_ term: String) {
         query = term
         onQueryChanged()

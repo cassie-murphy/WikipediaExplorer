@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct WikipediaExplorerApp: App {
     private let api: WikipediaAPIClient = LiveWikipediaAPIClient(
-        userAgent: "WikipediaExplorer/1.0 (contact: you@example.com)"
+        userAgent: "WikipediaExplorer/1.0 (contact: cassie.murphy@cmdevlabs.com)"
     )
     private let location = LocationProvider()
 

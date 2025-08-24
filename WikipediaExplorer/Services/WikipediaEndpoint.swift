@@ -6,7 +6,7 @@ enum WikipediaEndpoint {
 
     private var base: String { "https://en.wikipedia.org/w/api.php" }
 
-    func urlRequest(userAgent: String) throws -> URLRequest {
+    func urlRequest(userAgent: String, timeout: TimeInterval = 10.0) throws -> URLRequest {
         var comps = URLComponents(string: base)!
         var items: [URLQueryItem] = [
             .init(name: "action", value: "query"),
@@ -34,9 +34,11 @@ enum WikipediaEndpoint {
         }
 
         comps.queryItems = items
-        guard let url = comps.url else { throw URLError(.badURL) }
+        guard let url = comps.url else { throw WikipediaError.invalidResponse }
+
         var req = URLRequest(url: url)
         req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        req.timeoutInterval = timeout
         return req
     }
 }

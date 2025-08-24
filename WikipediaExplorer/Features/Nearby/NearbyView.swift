@@ -2,88 +2,115 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-private struct ArticleWithGeo: Identifiable {
-    let article: Article
-    let geo: Geo
-    var id: Int { article.id }
-}
-
 struct NearbyView: View {
     @State var viewModel: NearbyViewModel
-    @State private var mapPosition = MapCameraPosition.region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-        )
-    )
-    @State private var mapCenter: CLLocationCoordinate2D?
-    @State private var lastFetchedCenter: CLLocationCoordinate2D?
-
-    private func distanceMeters(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> CLLocationDistance {
-        CLLocation(latitude: a.latitude, longitude: a.longitude)
-            .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
-    }
 
     var body: some View {
         NavigationStack {
             VStack {
                 switch viewModel.state {
                 case .idle:
-                    ContentUnavailableView(
-                        "Nearby Wikipedia",
-                        systemImage: "location",
-                        description: Text("Find articles near your current location")
-                    )
-                    Button("Fetch Nearby") { 
-                        viewModel.fetchNearby() 
-                    }
-                    .buttonStyle(.borderedProminent)
-
+                    idleStateView
                 case .loading:
-                    ProgressView("Getting your location…")
-
+                    loadingStateView
                 case .failed(let message):
-                    ContentUnavailableView(
-                        "Couldn’t Load",
-                        systemImage: "wifi.exclamationmark",
-                        description: Text(message)
-                    )
-                    Button("Try Again") { 
-                        viewModel.fetchNearby() 
-                    }
-
+                    errorStateView(message: message)
                 case .loaded(let articles):
-                    mapView(with: articles)
-                        .frame(height: 300)
-                    
-                    articleList(articles)
+                    loadedStateView(articles: articles)
                 }
             }
             .navigationTitle("Nearby")
-            .task(id: viewModel.state) {
-                handleStateChange()
+            .refreshable {
+                viewModel.retry()
             }
             .navigationDestination(for: Article.self) { article in
-                if let url = article.fullURL {
-                    ArticleDetailView(url: url, title: article.title)
-                } else {
-                    ContentUnavailableView(
-                        "Unavailable",
-                        systemImage: "link.slash",
-                        description: Text("This article does not have a URL.")
-                    )
-                }
+                articleDestination(article)
+            }
+        }
+    }
+    
+    // MARK: - State Views
+    
+    @ViewBuilder
+    private var idleStateView: some View {
+        VStack(spacing: 16) {
+            ContentUnavailableView(
+                "Nearby Wikipedia",
+                systemImage: "location",
+                description: Text("Find articles near your current location")
+            )
+            
+            Button("Find Nearby Articles") {
+                viewModel.fetchNearby()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+    
+    @ViewBuilder
+    private var loadingStateView: some View {
+        ProgressView("Getting your locationâ€¦")
+    }
+    
+    @ViewBuilder
+    private func errorStateView(message: String) -> some View {
+        VStack(spacing: 16) {
+            ContentUnavailableView(
+                "Couldn't Load Nearby Articles",
+                systemImage: ErrorMessageHelper.iconForErrorMessage(message),
+                description: Text(message)
+            )
+            
+            Button("Try Again") {
+                viewModel.retry()
+            }
+            .buttonStyle(.borderedProminent)
+            
+            if let suggestion = ErrorMessageHelper.recoverySuggestionForErrorMessage(message) {
+                Text(suggestion)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
             }
         }
     }
     
     @ViewBuilder
-    private func mapView(with articles: [Article]) -> some View {
-        Map(position: $mapPosition) {
-            let items: [ArticleWithGeo] = articles.compactMap { article in
-                guard let geo = article.geo, article.fullURL != nil else { return nil }
-                return ArticleWithGeo(article: article, geo: geo)
+    private func loadedStateView(articles: [Article]) -> some View {
+        if articles.isEmpty {
+            emptyResultsView
+        } else {
+            VStack(spacing: 0) {
+                mapView(with: articles)
+                    .frame(height: 300)
+                
+                articleList(articles: articles)
             }
+        }
+    }
+    
+    @ViewBuilder
+    private var emptyResultsView: some View {
+        VStack(spacing: 16) {
+            ContentUnavailableView(
+                "No Articles Nearby",
+                systemImage: "mappin.slash",
+                description: Text("No Wikipedia articles found in this area")
+            )
+            
+            Button("Try Again") {
+                viewModel.retry()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+    
+    // MARK: - Content Views
+    @ViewBuilder
+    private func mapView(with articles: [Article]) -> some View {
+        Map(position: $viewModel.mapPosition) {
+            let items = viewModel.getArticlesWithGeo(from: articles)
             
             ForEach(items) { item in
                 Annotation(item.article.title, coordinate: CLLocationCoordinate2D(
@@ -98,22 +125,19 @@ struct NearbyView: View {
                 }
             }
         }
-        .onChange(of: mapPosition) { _, newValue in
-            if let region = mapPosition.region {
-                mapCenter = region.center
-            }
+        .onChange(of: viewModel.mapPosition) { _, newValue in
+            viewModel.updateMapPosition(newValue)
         }
         .overlay(alignment: .top) {
-            searchAreaButtonIfAppropriate()
+            searchAreaButton
         }
     }
     
     @ViewBuilder
-    private func searchAreaButtonIfAppropriate() -> some View {
-        if shouldShowSearchButton,
-           let center = mapCenter {
+    private var searchAreaButton: some View {
+        if viewModel.shouldShowSearchButton(),
+           let center = viewModel.mapCenter {
             Button {
-                lastFetchedCenter = center
                 viewModel.fetchNearby(at: center)
             } label: {
                 Label("Search This Area", systemImage: "magnifyingglass.circle.fill")
@@ -125,18 +149,8 @@ struct NearbyView: View {
         }
     }
     
-    private var shouldShowSearchButton: Bool {
-        guard let center = mapCenter else { return false }
-        
-        let thresholdMeters: CLLocationDistance = 1_000
-        if let last = lastFetchedCenter {
-            return distanceMeters(center, last) > thresholdMeters
-        } else {
-            return true
-        }
-    }
-    
-    private func articleList(_ articles: [Article]) -> some View {
+    @ViewBuilder
+    private func articleList(articles: [Article]) -> some View {
         List {
             ForEach(articles) { article in
                 NavigationLink(value: article) {
@@ -144,23 +158,29 @@ struct NearbyView: View {
                 }
             }
         }
+        .refreshable {
+            viewModel.retry()
+        }
     }
     
-    private func handleStateChange() {
-        switch viewModel.state {
-        case .idle:
-            viewModel.fetchNearby()
-        case .loaded(let articles):
-            if let first = articles.first?.geo {
-                let region = MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon),
-                    span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
-                )
-                mapPosition = .region(region)
-                lastFetchedCenter = CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon)
-            }
-        default:
-            break
+    @ViewBuilder
+    private func articleDestination(_ article: Article) -> some View {
+        if let url = article.fullURL {
+            ArticleDetailView(url: url, title: article.title)
+        } else {
+            ContentUnavailableView(
+                "Unavailable",
+                systemImage: "link.slash",
+                description: Text("This article does not have a URL.")
+            )
         }
     }
 }
+
+// MARK: - Previews
+#Preview("Loaded with Articles") { NearbyView(viewModel: .previewWithArticles) }
+#Preview("Empty Results") { NearbyView(viewModel: .previewEmptyResults) }
+#Preview("Idle State") { NearbyView(viewModel: .previewIdle) }
+#Preview("Loading State") { NearbyView(viewModel: .previewLoading) }
+#Preview("Error - Location Denied") { NearbyView(viewModel: .previewLocationError) }
+#Preview("Error - Network") { NearbyView(viewModel: .previewNetworkError) }
