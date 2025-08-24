@@ -113,7 +113,7 @@ extension PreviewMocks {
     static let historyStore: SearchHistoryStore = PreviewSearchHistoryStore()
 }
 
-fileprivate struct PreviewSearchHistoryStore: SearchHistoryStore {
+private struct PreviewSearchHistoryStore: SearchHistoryStore {
     func load() -> [String] {
         return PreviewData.searchHistory
     }

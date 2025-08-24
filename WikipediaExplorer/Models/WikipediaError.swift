@@ -11,7 +11,7 @@ enum WikipediaError: Error, LocalizedError, Equatable {
     case serverError(Int)
     case decodingError
     case unknown(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .networkUnavailable:
@@ -36,7 +36,7 @@ enum WikipediaError: Error, LocalizedError, Equatable {
             return message
         }
     }
-    
+
     var recoverySuggestion: String? {
         switch self {
         case .networkUnavailable:
@@ -51,7 +51,7 @@ enum WikipediaError: Error, LocalizedError, Equatable {
             return "Please try again."
         }
     }
-    
+
     var shouldShowRetry: Bool {
         switch self {
         case .networkUnavailable, .requestTimeout, .serverError, .invalidResponse, .locationUnavailable:
@@ -70,7 +70,7 @@ extension WikipediaError {
         if let wikipediaError = error as? WikipediaError {
             return wikipediaError
         }
-        
+
         if let urlError = error as? URLError {
             switch urlError.code {
             case .notConnectedToInternet, .networkConnectionLost:
@@ -83,7 +83,7 @@ extension WikipediaError {
                 return .unknown(urlError.localizedDescription)
             }
         }
-        
+
         if let locationError = error as? LocationError {
             switch locationError {
             case .denied:
@@ -94,7 +94,7 @@ extension WikipediaError {
                 return .locationUnavailable
             }
         }
-        
+
         return .unknown(error.localizedDescription)
     }
 }

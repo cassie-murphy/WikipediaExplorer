@@ -12,7 +12,7 @@ struct ErrorMessageHelper {
             return "exclamationmark.triangle"
         }
     }
-    
+
     static func recoverySuggestionForErrorMessage(_ message: String) -> String? {
         if message.contains("Location access denied") {
             return "Go to Settings > Privacy & Security > Location Services to enable location access."

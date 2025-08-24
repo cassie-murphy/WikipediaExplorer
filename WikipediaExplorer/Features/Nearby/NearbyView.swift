@@ -28,9 +28,9 @@ struct NearbyView: View {
             }
         }
     }
-    
+
     // MARK: - State Views
-    
+
     @ViewBuilder
     private var idleStateView: some View {
         VStack(spacing: 16) {
@@ -39,19 +39,19 @@ struct NearbyView: View {
                 systemImage: "location",
                 description: Text("Find articles near your current location")
             )
-            
+
             Button("Find Nearby Articles") {
                 viewModel.fetchNearby()
             }
             .buttonStyle(.borderedProminent)
         }
     }
-    
+
     @ViewBuilder
     private var loadingStateView: some View {
         ProgressView("Getting your locationâ€¦")
     }
-    
+
     @ViewBuilder
     private func errorStateView(message: String) -> some View {
         VStack(spacing: 16) {
@@ -60,12 +60,12 @@ struct NearbyView: View {
                 systemImage: ErrorMessageHelper.iconForErrorMessage(message),
                 description: Text(message)
             )
-            
+
             Button("Try Again") {
                 viewModel.retry()
             }
             .buttonStyle(.borderedProminent)
-            
+
             if let suggestion = ErrorMessageHelper.recoverySuggestionForErrorMessage(message) {
                 Text(suggestion)
                     .font(.caption)
@@ -75,7 +75,7 @@ struct NearbyView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private func loadedStateView(articles: [Article]) -> some View {
         if articles.isEmpty {
@@ -84,12 +84,12 @@ struct NearbyView: View {
             VStack(spacing: 0) {
                 mapView(with: articles)
                     .frame(height: 300)
-                
+
                 articleList(articles: articles)
             }
         }
     }
-    
+
     @ViewBuilder
     private var emptyResultsView: some View {
         VStack(spacing: 16) {
@@ -98,20 +98,20 @@ struct NearbyView: View {
                 systemImage: "mappin.slash",
                 description: Text("No Wikipedia articles found in this area")
             )
-            
+
             Button("Try Again") {
                 viewModel.retry()
             }
             .buttonStyle(.borderedProminent)
         }
     }
-    
+
     // MARK: - Content Views
     @ViewBuilder
     private func mapView(with articles: [Article]) -> some View {
         Map(position: $viewModel.mapPosition) {
             let items = viewModel.getArticlesWithGeo(from: articles)
-            
+
             ForEach(items) { item in
                 Annotation(item.article.title, coordinate: CLLocationCoordinate2D(
                     latitude: item.geo.lat,
@@ -132,7 +132,7 @@ struct NearbyView: View {
             searchAreaButton
         }
     }
-    
+
     @ViewBuilder
     private var searchAreaButton: some View {
         if viewModel.shouldShowSearchButton(),
@@ -148,7 +148,7 @@ struct NearbyView: View {
             .padding(.top, 8)
         }
     }
-    
+
     @ViewBuilder
     private func articleList(articles: [Article]) -> some View {
         List {
@@ -162,7 +162,7 @@ struct NearbyView: View {
             viewModel.retry()
         }
     }
-    
+
     @ViewBuilder
     private func articleDestination(_ article: Article) -> some View {
         if let url = article.fullURL {

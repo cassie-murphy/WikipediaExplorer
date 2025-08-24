@@ -10,10 +10,10 @@ extension Loadable: Equatable where Value: Equatable {
         switch (lhs, rhs) {
         case (.idle, .idle), (.loading, .loading):
             return true
-        case (.failed(let a), .failed(let b)):
-            return a == b
-        case (.loaded(let a), .loaded(let b)):
-            return a == b
+        case (.failed(let leftValue), .failed(let rightValue)):
+            return leftValue == rightValue
+        case (.loaded(let leftValue), .loaded(let rightValue)):
+            return leftValue == rightValue
         default:
             return false
         }

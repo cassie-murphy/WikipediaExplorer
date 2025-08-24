@@ -8,7 +8,7 @@ final class SearchViewModel {
     private var searchTask: Task<Void, Never>?
     private let history: SearchHistoryStore
     private let debounceInterval: UInt64 = 350_000_000 // 350ms
-    
+
     var recentSearches: [String] = []
     var query: String = ""
     var mode: Mode = .idle
@@ -23,9 +23,9 @@ final class SearchViewModel {
     func onQueryChanged() {
         // Cancel any existing search
         searchTask?.cancel()
-        
+
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         // Handle empty query
         guard !trimmedQuery.isEmpty else {
             Task { @MainActor in
@@ -42,7 +42,7 @@ final class SearchViewModel {
                 // Debounce the search
                 try await Task.sleep(nanoseconds: debounceInterval)
                 guard !Task.isCancelled else { return }
-                
+
                 // Perform the search
                 let articles = try await wikipediaAPIClient.search(text: trimmedQuery, limit: 20)
                 guard !Task.isCancelled else { return }
@@ -65,7 +65,7 @@ final class SearchViewModel {
             }
         }
     }
-    
+
     func retrySearch() {
         onQueryChanged()
     }

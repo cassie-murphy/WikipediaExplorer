@@ -29,7 +29,7 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate, LocationProvi
     func requestCurrentLocation() async throws -> CLLocation {
         // Clean up any existing request
         cleanup()
-        
+
         // Check authorization status
         switch manager.authorizationStatus {
         case .notDetermined:
@@ -44,7 +44,7 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate, LocationProvi
             throw WikipediaError.locationUnavailable
         }
     }
-    
+
     // MARK: - Private Methods
     private func requestLocationWithAuthorization() async throws -> CLLocation {
         return try await withCheckedThrowingContinuation { continuation in
@@ -88,7 +88,7 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate, LocationProvi
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let continuation = locationContinuation else { return }
         cleanup()
-        
+
         if let location = locations.first {
             continuation.resume(returning: location)
         } else {
@@ -104,7 +104,7 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate, LocationProvi
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         guard locationContinuation != nil else { return }
-        
+
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             manager.requestLocation()

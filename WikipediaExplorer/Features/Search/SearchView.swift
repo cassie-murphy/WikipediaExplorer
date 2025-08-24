@@ -21,7 +21,7 @@ struct SearchView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
-                    
+
                     /// Search Results section
                     if !viewModel.results.isEmpty {
                         Section {
@@ -67,7 +67,7 @@ struct SearchView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var overlayContent: some View {
         switch viewModel.mode {
@@ -79,10 +79,10 @@ struct SearchView: View {
                     description: Text("Type to find articles")
                 )
             }
-            
+
         case .searching:
             ProgressView("Searching…")
-            
+
         case .results:
             if viewModel.results.isEmpty {
                 ContentUnavailableView(
@@ -91,7 +91,7 @@ struct SearchView: View {
                     description: Text("No articles found for '\(viewModel.query)'")
                 )
             }
-            
+
         case .error(let error):
             VStack(spacing: 16) {
                 ContentUnavailableView(
@@ -99,14 +99,14 @@ struct SearchView: View {
                     systemImage: errorIcon(for: error),
                     description: Text(error.errorDescription ?? "Unknown error")
                 )
-                
+
                 if error.shouldShowRetry {
                     Button("Try Again") {
                         viewModel.retrySearch()
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                
+
                 if let suggestion = error.recoverySuggestion {
                     Text(suggestion)
                         .font(.caption)
@@ -117,7 +117,7 @@ struct SearchView: View {
             }
         }
     }
-    
+
     @ViewBuilder
     private var searchSuggestions: some View {
         if viewModel.query.isEmpty {
@@ -138,7 +138,7 @@ struct SearchView: View {
             }
         }
     }
-    
+
     private func errorIcon(for error: WikipediaError) -> String {
         switch error {
         case .networkUnavailable:

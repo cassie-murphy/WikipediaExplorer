@@ -25,7 +25,7 @@ final class NearbyViewModel {
     func fetchNearby() {
         Task {
             await MainActor.run { self.state = .loading }
-            
+
             do {
                 let loc = try await location.requestCurrentLocation()
                 let articles = try await api.nearby(
@@ -34,12 +34,12 @@ final class NearbyViewModel {
                     radiusMeters: 10_000,
                     limit: 30
                 )
-                
+
                 await MainActor.run {
                     self.state = .loaded(articles)
                     self.updateMapForArticles(articles)
                 }
-                
+
             } catch {
                 let wikipediaError = WikipediaError.from(error)
                 await MainActor.run {
@@ -54,7 +54,7 @@ final class NearbyViewModel {
                      limit: Int = 30) {
         Task {
             await MainActor.run { self.state = .loading }
-            
+
             do {
                 let articles = try await api.nearby(
                     lat: center.latitude,
@@ -62,12 +62,12 @@ final class NearbyViewModel {
                     radiusMeters: radiusMeters,
                     limit: limit
                 )
-                
+
                 await MainActor.run {
                     self.state = .loaded(articles)
                     self.lastFetchedCenter = center
                 }
-                
+
             } catch {
                 let wikipediaError = WikipediaError.from(error)
                 await MainActor.run {
@@ -90,7 +90,7 @@ final class NearbyViewModel {
 
     func shouldShowSearchButton() -> Bool {
         guard let center = mapCenter else { return false }
-        
+
         let thresholdMeters: CLLocationDistance = 1_000
         if let last = lastFetchedCenter {
             return distanceMeters(center, last) > thresholdMeters
@@ -109,7 +109,7 @@ final class NearbyViewModel {
     // MARK: - Private Helpers
     private func updateMapForArticles(_ articles: [Article]) {
         guard let first = articles.first?.geo else { return }
-        
+
         let region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon),
             span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
@@ -118,9 +118,9 @@ final class NearbyViewModel {
         lastFetchedCenter = CLLocationCoordinate2D(latitude: first.lat, longitude: first.lon)
     }
 
-    private func distanceMeters(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> CLLocationDistance {
-        CLLocation(latitude: a.latitude, longitude: a.longitude)
-            .distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude))
+    private func distanceMeters(_ first: CLLocationCoordinate2D, _ second: CLLocationCoordinate2D) -> CLLocationDistance {
+        CLLocation(latitude: first.latitude, longitude: first.longitude)
+            .distance(from: CLLocation(latitude: second.latitude, longitude: second.longitude))
     }
 }
 

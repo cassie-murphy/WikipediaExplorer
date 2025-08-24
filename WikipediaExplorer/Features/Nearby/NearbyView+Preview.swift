@@ -11,35 +11,35 @@ extension NearbyViewModel {
         viewModel.state = Loadable<[Article]>.idle
         return viewModel
     }
-    
+
     static var previewLoading: NearbyViewModel {
         let viewModel = NearbyViewModel(api: PreviewMocks.apiClient, location: PreviewMocks.locationProvider)
         viewModel.state = Loadable<[Article]>.loading
         return viewModel
     }
-    
+
     static var previewLocationError: NearbyViewModel {
         let viewModel = NearbyViewModel(api: PreviewMocks.apiClient, location: PreviewMocks.locationProvider)
         viewModel.state = Loadable<[Article]>.failed("Location access denied. Please enable in Settings.")
         return viewModel
     }
-    
+
     static var previewNetworkError: NearbyViewModel {
         let viewModel = NearbyViewModel(api: PreviewMocks.apiClient, location: PreviewMocks.locationProvider)
         viewModel.state = Loadable<[Article]>.failed("No internet connection available")
         return viewModel
     }
-    
+
     static var previewEmptyResults: NearbyViewModel {
         let viewModel = NearbyViewModel(api: PreviewMocks.apiClient, location: PreviewMocks.locationProvider)
         viewModel.state = Loadable<[Article]>.loaded([])
         return viewModel
     }
-    
+
     static var previewWithArticles: NearbyViewModel {
         let viewModel = NearbyViewModel(api: PreviewMocks.apiClient, location: PreviewMocks.locationProvider)
         viewModel.state = Loadable<[Article]>.loaded(PreviewData.sanFranciscoArticles)
-        
+
         // Set up map to show San Francisco
         viewModel.mapPosition = MapCameraPosition.region(
             MKCoordinateRegion(
@@ -49,7 +49,7 @@ extension NearbyViewModel {
         )
         viewModel.mapCenter = CLLocationCoordinate2D(latitude: 37.8199, longitude: -122.4783)
         viewModel.lastFetchedCenter = CLLocationCoordinate2D(latitude: 37.8199, longitude: -122.4783)
-        
+
         return viewModel
     }
 }
@@ -93,7 +93,7 @@ struct PreviewData {
             geo: Geo(lat: 37.8024, lon: -122.4058)
         )
     ]
-    
+
     static let newYorkArticles = [
         Article(
             id: 10,
@@ -125,17 +125,17 @@ struct PreviewMocks {
     static let locationProvider: LocationProviderProtocol = PreviewLocationProvider()
 }
 
-fileprivate struct PreviewWikipediaAPIClient: WikipediaAPIClient {
+private struct PreviewWikipediaAPIClient: WikipediaAPIClient {
     func search(text: String, limit: Int) async throws -> [Article] {
         return []
     }
-    
+
     func nearby(lat: Double, lon: Double, radiusMeters: Int, limit: Int) async throws -> [Article] {
         return []
     }
 }
 
-fileprivate final class PreviewLocationProvider: LocationProviderProtocol {
+private final class PreviewLocationProvider: LocationProviderProtocol {
     @MainActor
     func requestCurrentLocation() async throws -> CLLocation {
         // Return a default San Francisco location for previews

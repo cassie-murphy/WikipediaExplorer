@@ -11,7 +11,7 @@ final class MockWikipediaAPIClient: WikipediaAPIClient {
     var shouldThrowError: WikipediaError?
     var searchDelay: TimeInterval = 0
     var nearbyDelay: TimeInterval = 0
-    
+
     // Call tracking
     private(set) var searchCallCount = 0
     private(set) var nearbyCallCount = 0
@@ -21,41 +21,41 @@ final class MockWikipediaAPIClient: WikipediaAPIClient {
     private(set) var lastNearbyLon: Double?
     private(set) var lastNearbyRadius: Int?
     private(set) var lastNearbyLimit: Int?
-    
+
     func search(text: String, limit: Int) async throws -> [Article] {
         searchCallCount += 1
         lastSearchText = text
         lastSearchLimit = limit
-        
+
         if searchDelay > 0 {
             try await Task.sleep(nanoseconds: UInt64(searchDelay * 1_000_000_000))
         }
-        
+
         if let error = shouldThrowError {
             throw error
         }
-        
+
         return searchResult
     }
-    
+
     func nearby(lat: Double, lon: Double, radiusMeters: Int, limit: Int) async throws -> [Article] {
         nearbyCallCount += 1
         lastNearbyLat = lat
         lastNearbyLon = lon
         lastNearbyRadius = radiusMeters
         lastNearbyLimit = limit
-        
+
         if nearbyDelay > 0 {
             try await Task.sleep(nanoseconds: UInt64(nearbyDelay * 1_000_000_000))
         }
-        
+
         if let error = shouldThrowError {
             throw error
         }
-        
+
         return nearbyResult
     }
-    
+
     // Test helpers
     func reset() {
         searchCallCount = 0
@@ -78,66 +78,66 @@ final class MockWikipediaAPIClient: WikipediaAPIClient {
 final class MockSearchHistoryStore: SearchHistoryStore, @unchecked Sendable {
     // Storage - protected by actor isolation
     private var _items: [String] = []
-    
+
     // Call tracking - protected by actor isolation
     private var _loadCallCount = 0
     private var _recordCalls: [String] = []
     private var _removeCalls: [IndexSet] = []
     private var _clearCallCount = 0
-    
+
     // Thread-safe accessors
     var items: [String] {
         return _items
     }
-    
+
     var loadCallCount: Int {
         return _loadCallCount
     }
-    
+
     var recordCalls: [String] {
         return _recordCalls
     }
-    
+
     var removeCalls: [IndexSet] {
         return _removeCalls
     }
-    
+
     var clearCallCount: Int {
         return _clearCallCount
     }
-    
+
     func load() -> [String] {
         _loadCallCount += 1
         return _items
     }
-    
+
     func record(_ term: String) {
         _recordCalls.append(term)
         let trimmed = term.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
+
         // Remove existing instance (case insensitive)
         _items.removeAll { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
-        
+
         // Add to front
         _items.insert(trimmed, at: 0)
-        
+
         // Limit to 10 items
         if _items.count > 10 {
             _items = Array(_items.prefix(10))
         }
     }
-    
+
     func remove(at offsets: IndexSet) {
         _removeCalls.append(offsets)
         _items.remove(atOffsets: offsets)
     }
-    
+
     func clear() {
         _clearCallCount += 1
         _items.removeAll()
     }
-    
+
     // Test helpers
     func reset() {
         _items = []
@@ -146,7 +146,7 @@ final class MockSearchHistoryStore: SearchHistoryStore, @unchecked Sendable {
         _removeCalls = []
         _clearCallCount = 0
     }
-    
+
     func preloadItems(_ searchTerms: [String]) {
         _items = searchTerms
     }
@@ -160,28 +160,28 @@ final class MockLocationProvider: LocationProviderProtocol {
     var mockError: Error?
     var authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
     var delay: TimeInterval = 0
-    
+
     // Call tracking
     private(set) var requestLocationCallCount = 0
-    
+
     func requestCurrentLocation() async throws -> CLLocation {
         requestLocationCallCount += 1
-        
+
         if delay > 0 {
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
-        
+
         if let error = mockError {
             throw error
         }
-        
+
         guard let location = mockLocation else {
             throw WikipediaError.locationUnavailable as Error
         }
-        
+
         return location
     }
-    
+
     // Test helpers
     func reset() {
         mockLocation = nil
@@ -190,7 +190,7 @@ final class MockLocationProvider: LocationProviderProtocol {
         delay = 0
         requestLocationCallCount = 0
     }
-    
+
     func setMockLocation(latitude: Double, longitude: Double) {
         mockLocation = CLLocation(latitude: latitude, longitude: longitude)
     }
@@ -255,7 +255,7 @@ struct TestData {
             geo: Geo(lat: 37.7749, lon: -122.4194)
         )
     ]
-    
+
     static let searchHistory = [
         "San Francisco",
         "Golden Gate Bridge",
@@ -263,9 +263,9 @@ struct TestData {
         "Machine Learning",
         "Swift Programming"
     ]
-    
+
     static let emptyResults: [Article] = []
-    
+
     static let singleArticle = [
         Article.fixture(
             id: 100,
@@ -275,7 +275,7 @@ struct TestData {
             geo: nil
         )
     ]
-    
+
     static let articlesWithoutGeo = [
         Article.fixture(
             id: 200,
@@ -292,7 +292,7 @@ struct TestData {
             geo: nil
         )
     ]
-    
+
     static let mixedArticles = sanFranciscoArticles + articlesWithoutGeo
 }
 
@@ -313,7 +313,7 @@ extension WikipediaError {
             .unknown("Test error message")
         ]
     }
-    
+
     static var retryableErrors: [WikipediaError] {
         [
             .networkUnavailable,
@@ -323,7 +323,7 @@ extension WikipediaError {
             .invalidResponse
         ]
     }
-    
+
     static var nonRetryableErrors: [WikipediaError] {
         [
             .locationDenied,

@@ -16,12 +16,12 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
             .urlRequest(userAgent: userAgent, timeout: timeout)
 
         let articles = try await fetchArticles(request)
-        
+
         // Return specific error if no results found
         if articles.isEmpty {
             throw WikipediaError.noResults
         }
-        
+
         return articles
     }
 
@@ -36,12 +36,12 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
             .urlRequest(userAgent: userAgent, timeout: timeout)
 
         let articles = try await fetchArticles(request)
-        
+
         // Return specific error if no results found
         if articles.isEmpty {
             throw WikipediaError.noResults
         }
-        
+
         return articles
     }
 
@@ -53,7 +53,7 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
             guard let http = response as? HTTPURLResponse else {
                 throw WikipediaError.invalidResponse
             }
-            
+
             // Handle different HTTP status codes
             switch http.statusCode {
             case 200:
@@ -73,7 +73,7 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
             } catch {
                 throw WikipediaError.decodingError
             }
-            
+
         } catch let error as WikipediaError {
             throw error
         } catch {
@@ -88,13 +88,13 @@ private nonisolated struct WikiQueryResponse: Decodable {
 
     var articles: [Article] {
         guard let pages = query?.pages else { return [] }
-        return pages.map { p in
+        return pages.map { page in
             Article(
-                id: p.pageid,
-                title: p.title,
-                fullURL: p.fullurl,
-                thumbnailURL: p.thumbnail?.source,
-                geo: (p.coordinates?.first).map { Geo(lat: $0.lat, lon: $0.lon) }
+                id: page.pageid,
+                title: page.title,
+                fullURL: page.fullurl,
+                thumbnailURL: page.thumbnail?.source,
+                geo: (page.coordinates?.first).map { Geo(lat: $0.lat, lon: $0.lon) }
             )
         }
         .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
