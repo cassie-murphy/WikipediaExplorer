@@ -10,6 +10,8 @@ struct WikipediaExplorerApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(api: api, location: location)
+                .background(Color("AppBackgroundColor"))
+                .tint(Color("AccentColor"))
         }
     }
 }

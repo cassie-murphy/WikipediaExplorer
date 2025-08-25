@@ -70,8 +70,8 @@ extension Loadable where Value == [Article] {
         return nil
     }
 
-    var failedMessage: String? {
-        if case .failed(let message) = self { return message }
+    var failedError: WikipediaError? {
+        if case .failed(let error) = self { return error }
         return nil
     }
 }

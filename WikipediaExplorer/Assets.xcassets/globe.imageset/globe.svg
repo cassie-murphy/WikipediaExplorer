@@ -1,0 +1,26 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Globe -->
+  <g transform="translate(100, 80)">
+    <!-- Globe circle -->
+    <circle cx="0" cy="0" r="50" fill="none" stroke="currentColor" stroke-width="2"/>
+    
+    <!-- Vertical ellipse (longitude line) -->
+    <ellipse cx="0" cy="0" rx="20" ry="50" fill="none" stroke="currentColor" stroke-width="2"/>
+    
+    <!-- Horizontal lines (latitude lines) -->
+    <path d="M -50 0 Q 0 -25, 50 0" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M -50 0 Q 0 25, 50 0" fill="none" stroke="currentColor" stroke-width="2"/>
+    
+    <!-- Top latitude line -->
+    <ellipse cx="0" cy="-25" rx="43" ry="13" fill="none" stroke="currentColor" stroke-width="2"/>
+    
+    <!-- Bottom latitude line -->
+    <ellipse cx="0" cy="25" rx="43" ry="13" fill="none" stroke="currentColor" stroke-width="2"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="100" y="160" font-family="-apple-system, system-ui, 'SF Pro Display', 'Helvetica Neue'" 
+        font-size="20" font-weight="500" fill="currentColor" text-anchor="middle">
+    Wikipedia Explorer
+  </text>
+</svg>

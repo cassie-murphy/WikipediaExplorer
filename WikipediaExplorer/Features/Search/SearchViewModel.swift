@@ -2,12 +2,18 @@ import SwiftUI
 
 @Observable
 final class SearchViewModel {
-    enum Mode: Equatable { case idle, searching, results, error(WikipediaError) }
+    enum Mode: Equatable {
+        case idle
+        case searching
+        case results
+        case error(WikipediaError)
+    }
 
     private let wikipediaAPIClient: WikipediaAPIClient
     private var searchTask: Task<Void, Never>?
     private let history: SearchHistoryStore
     private let debounceInterval: UInt64 = 350_000_000 // 350ms
+    private var lastCommittedQuery: String = ""
 
     var recentSearches: [String] = []
     var query: String = ""
@@ -31,6 +37,7 @@ final class SearchViewModel {
             Task { @MainActor in
                 self.mode = .idle
                 self.results = []
+                self.lastCommittedQuery = ""
             }
             return
         }
@@ -51,8 +58,6 @@ final class SearchViewModel {
                 await MainActor.run {
                     self.results = articles
                     self.mode = .results
-                    self.history.record(trimmedQuery)
-                    self.recentSearches = self.history.load()
                 }
             } catch {
                 guard !Task.isCancelled else { return }
@@ -65,6 +70,19 @@ final class SearchViewModel {
             }
         }
     }
+    
+    func commitSearch() {
+        // Record to history when user explicitly commits (e.g., taps search button, selects from results)
+        let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedQuery.isEmpty else { return }
+        
+        // Only record if it's different from the last committed query
+        if trimmedQuery != lastCommittedQuery {
+            history.record(trimmedQuery)
+            recentSearches = history.load()
+            lastCommittedQuery = trimmedQuery
+        }
+    }
 
     func retrySearch() {
         onQueryChanged()
@@ -73,7 +91,11 @@ final class SearchViewModel {
     // MARK: - Recent Search Management
     func selectRecent(_ term: String) {
         query = term
+        lastCommittedQuery = term // This is an explicit selection
         onQueryChanged()
+        // Record it again to move it to the top of recents
+        history.record(term)
+        recentSearches = history.load()
     }
 
     func removeRecent(at offsets: IndexSet) {

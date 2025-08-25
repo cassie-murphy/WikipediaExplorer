@@ -33,6 +33,9 @@ struct SearchViewModelTests {
         #expect(viewModel.results[0].title == "Golden Gate Bridge")
         #expect(mockAPI.searchCallCount == 1)
         #expect(mockAPI.lastSearchText == "San Francisco")
+        #expect(mockHistory.recordCalls.isEmpty)
+        
+        viewModel.commitSearch()
         #expect(mockHistory.recordCalls.contains("San Francisco"))
     }
 
@@ -162,6 +165,40 @@ struct SearchViewModelTests {
     }
 
     // MARK: - Search History Tests
+    @Test func testCommitSearch() async throws {
+        // Arrange
+        viewModel.query = "Test Query"
+        
+        // Act
+        viewModel.commitSearch()
+        
+        // Assert
+        #expect(mockHistory.recordCalls.contains("Test Query"))
+        #expect(viewModel.recentSearches.contains("Test Query"))
+    }
+    
+    @Test func testCommitSearchIgnoresDuplicates() async throws {
+        // Arrange
+        viewModel.query = "Same Query"
+        
+        // Act
+        viewModel.commitSearch()
+        viewModel.commitSearch() // Second commit of same query
+        
+        // Assert
+        #expect(mockHistory.recordCalls.count == 1) // Only recorded once
+    }
+    
+    @Test func testCommitSearchIgnoresEmpty() async throws {
+        // Arrange
+        viewModel.query = ""
+        
+        // Act
+        viewModel.commitSearch()
+        
+        // Assert
+        #expect(mockHistory.recordCalls.isEmpty)
+    }
 
     @Test func testSearchHistoryLoading() async throws {
         // Arrange
@@ -193,6 +230,9 @@ struct SearchViewModelTests {
         #expect(viewModel.mode == .results)
         #expect(mockAPI.searchCallCount == 1)
         #expect(mockAPI.lastSearchText == "Previous Search")
+        
+        // Selecting recent should record it again to move to top
+        #expect(mockHistory.recordCalls.contains("Previous Search"))
     }
 
     @Test func testRemoveRecentSearch() async throws {
@@ -221,19 +261,6 @@ struct SearchViewModelTests {
         // Assert
         #expect(mockHistory.clearCallCount == 1)
         #expect(viewModel.recentSearches.isEmpty)
-    }
-
-    @Test func testRecordSearchHistory() async throws {
-        // Arrange
-        mockAPI.searchResult = TestData.singleArticle
-
-        // Act
-        viewModel.query = "New Search Term"
-        viewModel.onQueryChanged()
-        try await Task.sleep(nanoseconds: 400_000_000)
-
-        // Assert
-        #expect(mockHistory.recordCalls.contains("New Search Term"))
     }
 
     // MARK: - State Management Tests

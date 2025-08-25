@@ -1,6 +1,6 @@
 import Foundation
 
-enum WikipediaError: Error, LocalizedError, Equatable {
+public enum WikipediaError: Error, LocalizedError, Equatable {
     case networkUnavailable
     case invalidResponse
     case noResults
@@ -11,8 +11,35 @@ enum WikipediaError: Error, LocalizedError, Equatable {
     case serverError(Int)
     case decodingError
     case unknown(String)
+    
+    // MARK: - Error Categories
+    
+    public enum ErrorCategory {
+        case location
+        case network
+        case noContent
+        case unknown
+    }
+    
+    public var category: ErrorCategory {
+        switch self {
+        case .locationDenied, .locationRestricted:
+            return .location
+        case .networkUnavailable, .requestTimeout, .serverError, .invalidResponse, .locationUnavailable, .decodingError:
+            return .network
+        case .noResults:
+            return .noContent
+        case .unknown:
+            return .unknown
+        }
+    }
+    
+    public var requiresFullScreen: Bool {
+        category == .location
+    }
 
-    var errorDescription: String? {
+    // MARK: - Error Descriptions
+    public var errorDescription: String? {
         switch self {
         case .networkUnavailable:
             return "No internet connection available"
@@ -37,36 +64,58 @@ enum WikipediaError: Error, LocalizedError, Equatable {
         }
     }
 
-    var recoverySuggestion: String? {
+    public var recoverySuggestion: String? {
         switch self {
         case .networkUnavailable:
             return "Check your internet connection and try again."
         case .locationDenied:
             return "Go to Settings > Privacy & Security > Location Services to enable location access."
+        case .locationRestricted:
+            return "Location services are restricted on this device."
         case .requestTimeout, .serverError, .invalidResponse:
             return "Try again in a few moments."
         case .noResults:
-            return "Try different search terms."
+            return "Try different search terms or location."
+        case .locationUnavailable:
+            return "Make sure location services are enabled and try again."
         default:
             return "Please try again."
         }
     }
 
-    var shouldShowRetry: Bool {
+    public var shouldShowRetry: Bool {
         switch self {
         case .networkUnavailable, .requestTimeout, .serverError, .invalidResponse, .locationUnavailable:
             return true
-        case .locationDenied, .locationRestricted:
+        case .locationDenied, .locationRestricted, .noResults, .decodingError, .unknown:
             return false
-        case .noResults, .decodingError, .unknown:
-            return false
+        }
+    }
+
+    public var iconName: String {
+        switch category {
+        case .location:
+            return "location.slash"
+        case .network:
+            switch self {
+            case .networkUnavailable:
+                return "wifi.exclamationmark"
+            case .requestTimeout:
+                return "clock.badge.exclamationmark"
+            default:
+                return "exclamationmark.triangle"
+            }
+        case .noContent:
+            return "magnifyingglass"
+        case .unknown:
+            return "exclamationmark.triangle"
         }
     }
 }
 
-/// Extension for converting common errors
+// MARK: - Error Conversion
 extension WikipediaError {
-    static func from(_ error: Error) -> WikipediaError {
+    public static func from(_ error: Error) -> WikipediaError {
         if let wikipediaError = error as? WikipediaError {
             return wikipediaError
         }

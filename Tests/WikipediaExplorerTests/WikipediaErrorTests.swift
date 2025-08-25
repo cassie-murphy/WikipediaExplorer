@@ -137,4 +137,35 @@ struct WikipediaErrorTests {
         #expect(unknownError.shouldShowRetry == false)
         #expect(unknownError.recoverySuggestion == "Please try again.")
     }
+    
+    @Test func testErrorCategories() {
+        #expect(WikipediaError.locationDenied.category == .location)
+        #expect(WikipediaError.locationRestricted.category == .location)
+        #expect(WikipediaError.networkUnavailable.category == .network)
+        #expect(WikipediaError.requestTimeout.category == .network)
+        #expect(WikipediaError.serverError(500).category == .network)
+        #expect(WikipediaError.noResults.category == .noContent)
+        #expect(WikipediaError.unknown("test").category == .unknown)
+    }
+    
+    @Test func testRequiresFullScreen() {
+        // Only location errors should require full screen
+        #expect(WikipediaError.locationDenied.requiresFullScreen == true)
+        #expect(WikipediaError.locationRestricted.requiresFullScreen == true)
+        
+        // All other errors should not
+        #expect(WikipediaError.networkUnavailable.requiresFullScreen == false)
+        #expect(WikipediaError.locationUnavailable.requiresFullScreen == false)
+        #expect(WikipediaError.noResults.requiresFullScreen == false)
+        #expect(WikipediaError.requestTimeout.requiresFullScreen == false)
+    }
+    
+    @Test func testIconNames() {
+        #expect(WikipediaError.locationDenied.iconName == "location.slash")
+        #expect(WikipediaError.locationRestricted.iconName == "location.slash")
+        #expect(WikipediaError.networkUnavailable.iconName == "wifi.exclamationmark")
+        #expect(WikipediaError.requestTimeout.iconName == "clock.badge.exclamationmark")
+        #expect(WikipediaError.noResults.iconName == "magnifyingglass")
+        #expect(WikipediaError.serverError(500).iconName == "exclamationmark.triangle")
+    }
 }

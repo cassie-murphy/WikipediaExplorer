@@ -17,7 +17,6 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
 
         let articles = try await fetchArticles(request)
 
-        // Return specific error if no results found
         if articles.isEmpty {
             throw WikipediaError.noResults
         }
@@ -37,7 +36,6 @@ actor LiveWikipediaAPIClient: WikipediaAPIClient {
 
         let articles = try await fetchArticles(request)
 
-        // Return specific error if no results found
         if articles.isEmpty {
             throw WikipediaError.noResults
         }

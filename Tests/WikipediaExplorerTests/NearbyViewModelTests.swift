@@ -53,8 +53,9 @@ struct NearbyViewModelTests {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         // Assert
-        if case .failed(let message) = viewModel.state {
-            #expect(message.contains("Location access denied"))
+        if case .failed(let error) = viewModel.state {
+            #expect(error == .locationDenied)
+            #expect(error.requiresFullScreen == true)
         } else {
             Issue.record("Expected failed state")
         }
@@ -71,8 +72,9 @@ struct NearbyViewModelTests {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         // Assert
-        if case .failed(let message) = viewModel.state {
-            #expect(message.contains("Unable to determine location") || message.contains("location"))
+        if case .failed(let error) = viewModel.state {
+            #expect(error == .locationUnavailable)
+            #expect(error.requiresFullScreen == false)
         } else {
             Issue.record("Expected failed state")
         }
@@ -88,8 +90,9 @@ struct NearbyViewModelTests {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         // Assert
-        if case .failed(let message) = viewModel.state {
-            #expect(message.contains("internet") || message.contains("network"))
+        if case .failed(let error) = viewModel.state {
+            #expect(error == .networkUnavailable)
+            #expect(error.shouldShowRetry == true)
         } else {
             Issue.record("Expected failed state")
         }
@@ -180,6 +183,7 @@ struct NearbyViewModelTests {
     @Test func testRetryFunctionality() async throws {
         // Arrange
         mockAPI.shouldThrowError = WikipediaError.networkUnavailable
+        mockLocation.setMockLocation(latitude: 37.7749, longitude: -122.4194)
         viewModel.fetchNearby()
         try await Task.sleep(nanoseconds: 100_000_000)
 
@@ -192,7 +196,6 @@ struct NearbyViewModelTests {
 
         // Fix the error
         mockAPI.shouldThrowError = nil
-        mockLocation.setMockLocation(latitude: 37.7749, longitude: -122.4194)
         mockAPI.nearbyResult = TestData.singleArticle
 
         // Act
@@ -206,50 +209,33 @@ struct NearbyViewModelTests {
             Issue.record("Expected loaded state after retry")
         }
 
-        #expect(mockLocation.requestLocationCallCount == 2) // Original + retry
+        #expect(mockLocation.requestLocationCallCount == 1)
     }
 
     // MARK: - Map Logic Tests
 
-    @Test func testShouldShowSearchButtonWithoutCenter() async throws {
-        // Arrange
+    @Test func testShouldShowSearchButton() async throws {
+        // Test without center
         viewModel.mapCenter = nil
-
-        // Assert
-        #expect(viewModel.shouldShowSearchButton() == false)
-    }
-
-    @Test func testShouldShowSearchButtonWithoutPreviousFetch() async throws {
-        // Arrange
+        #expect(viewModel.shouldShowSearchButton == false)
+        
+        // Test without previous fetch
         viewModel.mapCenter = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
         viewModel.lastFetchedCenter = nil
-
-        // Assert
-        #expect(viewModel.shouldShowSearchButton() == true)
-    }
-
-    @Test func testShouldShowSearchButtonWithinThreshold() async throws {
-        // Arrange
+        #expect(viewModel.shouldShowSearchButton == true)
+        
+        // Test within threshold
         let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
-        let nearbyCenter = CLLocationCoordinate2D(latitude: 37.7750, longitude: -122.4195) // Very close
-
+        let nearbyCenter = CLLocationCoordinate2D(latitude: 37.7750, longitude: -122.4195)
         viewModel.mapCenter = center
         viewModel.lastFetchedCenter = nearbyCenter
-
-        // Assert - Should be false because centers are very close (< 1km apart)
-        #expect(viewModel.shouldShowSearchButton() == false)
-    }
-
-    @Test func testShouldShowSearchButtonBeyondThreshold() async throws {
-        // Arrange
-        let center = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194) // SF
-        let distantCenter = CLLocationCoordinate2D(latitude: 37.8199, longitude: -122.4783) // Golden Gate Bridge
-
+        #expect(viewModel.shouldShowSearchButton == false)
+        
+        // Test beyond threshold
+        let distantCenter = CLLocationCoordinate2D(latitude: 37.8199, longitude: -122.4783)
         viewModel.mapCenter = center
         viewModel.lastFetchedCenter = distantCenter
-
-        // Assert - Should be true because centers are far apart (> 1km)
-        #expect(viewModel.shouldShowSearchButton() == true)
+        #expect(viewModel.shouldShowSearchButton == true)
     }
 
     @Test func testGetArticlesWithGeo() async throws {
@@ -263,5 +249,38 @@ struct NearbyViewModelTests {
         #expect(geoArticles.count == 3) // Only SF articles have geo coordinates
         #expect(geoArticles.allSatisfy { $0.article.geo != nil })
         #expect(geoArticles.allSatisfy { $0.article.fullURL != nil })
+    }
+    
+    // MARK: - Event Handler Tests
+    
+    @Test func testHandleMapMoved() async throws {
+        // Arrange
+        let newCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        viewModel.lastFetchedCenter = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+        
+        // Act
+        viewModel.handleMapMoved(newCoordinate)
+        
+        // Assert
+        #expect(viewModel.mapCenter?.latitude == 40.7128)
+        #expect(viewModel.mapCenter?.longitude == -74.0060)
+        #expect(viewModel.showingSearchButton == true) // Should show button as distance > 500m
+    }
+    
+    @Test func testHandleSearchArea() async throws {
+        // Arrange
+        let searchCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        mockAPI.nearbyResult = TestData.singleArticle
+        viewModel.showingSearchButton = true
+        
+        // Act
+        viewModel.handleSearchArea(searchCoordinate)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        
+        // Assert
+        #expect(viewModel.showingSearchButton == false)
+        #expect(mockAPI.nearbyCallCount == 1)
+        #expect(mockAPI.lastNearbyLat == 40.7128)
+        #expect(mockAPI.lastNearbyLon == -74.0060)
     }
 }
